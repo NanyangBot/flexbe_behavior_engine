@@ -62,9 +62,8 @@ class FlexbeMirror(Node):
     def _mirror_callback(self, msg):
         Logger.loginfo('--> Mirror - received updated structure')
 
-        rate = self.create_rate(10, self.get_clock())
         while self._stopping:
-            rate.sleep()
+            time.sleep(0.1)
 
         if self._running:
             Logger.logwarn('Received a new mirror structure while mirror is already running, '
@@ -102,9 +101,9 @@ class FlexbeMirror(Node):
     def _start_mirror(self, msg):
         self.get_logger().info('--> Mirror - request to start mirror')
         with self._sync_lock:
-            rate = self.create_rate(10, self.get_clock())
             while self._stopping:
-                rate.sleep()
+                time.sleep(0.1)
+
 
             if self._running:
                 Logger.logwarn('Tried to start mirror while it is already running, will ignore.')
@@ -154,9 +153,9 @@ class FlexbeMirror(Node):
                     self._pub.publish('flexbe/behavior_update', String())
 
                 PreemptableState.preempt = True
-                rate = self.create_rate(10, self.get_clock())
                 while self._running:
-                    rate.sleep()
+                    time.sleep(0.1)
+
             else:
                 Logger.loginfo('No onboard behavior is active.')
 
@@ -237,9 +236,9 @@ class FlexbeMirror(Node):
             self._sub.remove_last_msg(self._outcome_topic, clear_buffer=True)
             if self._sm is not None and self._running:
                 PreemptableState.preempt = True
-                rate = self.create_rate(100, self.get_clock())
                 while self._running:
-                    rate.sleep()
+                    time.sleep(0.01)
+
                 self._sm = None
             if msg.current_state_checksum in self._state_checksums:
                 current_state_path = self._state_checksums[msg.current_state_checksum]

@@ -149,12 +149,11 @@ class ProxyPublisher(object):
 
     def _wait_for_subscribers(self, pub, timeout=5.0):
         starting_time = ProxyPublisher._node.get_clock().now()
-        rate = ProxyPublisher._node.create_rate(100, ProxyPublisher._node.get_clock())
 
         while (ProxyPublisher._node.get_clock().now() - starting_time).nanoseconds * 10 ** -9 < timeout:
             if pub.get_subscription_count() > 0:
                 return True
 
-            rate.sleep()
+            time.sleep(0.01)
 
         return False

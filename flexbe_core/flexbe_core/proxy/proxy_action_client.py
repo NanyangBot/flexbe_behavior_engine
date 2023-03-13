@@ -19,6 +19,7 @@ class ProxyActionClient(object):
 
     _result = {}
     _feedback = {}
+    _goal_response = {}
 
     @staticmethod
     def _initialize(node):
@@ -87,6 +88,7 @@ class ProxyActionClient(object):
         ProxyActionClient._cancel_current_goal[topic] = False
         ProxyActionClient._has_active_goal[topic] = True
         ProxyActionClient._current_goal[topic] = None
+        ProxyActionClient._goal_response[topic] = None
 
         if not isinstance(goal, ProxyActionClient._clients[topic]._action_type.Goal):
             if goal.__class__.__name__ == ProxyActionClient._clients[topic]._action_type.Goal.__name__:
@@ -111,12 +113,17 @@ class ProxyActionClient(object):
             feedback_callback=lambda f: self._feedback_callback(topic, f)
         )
 
-        future.add_done_callback(partial(self._done_callback, topic=topic))
+        future.add_done_callback(partial(self._goal_response_callback, topic=topic))
 
-    def _done_callback(self, future, topic):
-        ProxyActionClient._current_goal[topic] = future
-        result = future.result().get_result_async()
-        result.add_done_callback(partial(self._result_callback, topic=topic))
+    def _goal_response_callback(self, future, topic):
+        result = future.result()
+        ProxyActionClient._goal_response[topic] = result
+        if not result.accepted:
+            ProxyActionClient._has_active_goal[topic] = False
+        else:
+            ProxyActionClient._current_goal[topic] = future
+            result = result.get_result_async()
+            result.add_done_callback(partial(self._result_callback, topic=topic))
 
     def _result_callback(self, future, topic):
         result = future.result().result
@@ -161,6 +168,33 @@ class ProxyActionClient(object):
         @param topic: The topic of interest.
         """
         ProxyActionClient._result[topic] = None
+
+    def has_goal_response(self, topic):
+        """
+        Checks if the given action call already has a goal response.
+
+        @type topic: string
+        @param topic: The topic of interest.
+        """
+        return ProxyActionClient._goal_response.get(topic) is not None
+
+    def get_goal_response(self, topic):
+        """
+        Returns the goal response message of the given action call.
+
+        @type topic: string
+        @param topic: The topic of interest.
+        """
+        return ProxyActionClient._goal_response.get(topic)
+
+    def remove_goal_response(self, topic):
+        """
+        Removes the latest goal response message of the given action call.
+
+        @type topic: string
+        @param topic: The topic of interest.
+        """
+        ProxyActionClient._goal_response[topic] = None
 
     def has_feedback(self, topic):
         """

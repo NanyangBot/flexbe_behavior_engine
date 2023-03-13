@@ -116,13 +116,12 @@ class FlexbeOnboard(Node):
                 self._pub.publish(self.status_topic,
                                   BEStatus(stamp=self.get_clock().now().to_msg(), behavior_id=self.be.id, code=BEStatus.SWITCHING))
                 # wait if running behavior is currently starting or stopping
-                rate = self.create_rate(100, self.get_clock())
                 active_state = None
                 while rclpy.ok():
                     active_state = self.be.get_current_state()
                     if active_state is not None or not self._running:
                         break
-                    rate.sleep()
+                    time.sleep(0.01)
 
                 # extract the active state if any
                 if active_state is not None:

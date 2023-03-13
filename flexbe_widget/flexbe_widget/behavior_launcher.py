@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from flexbe_msgs.msg import *
-from rosidl_runtime_py import get_interface_path
+from ament_index_python.packages import get_package_share_directory
 
 from flexbe_core import BehaviorLibrary
 from std_msgs.msg import String
@@ -67,7 +67,7 @@ class BehaviorLauncher(Node):
 					if path.startswith('~') or path.startswith('/'):
 						yamlpath = os.path.expanduser(path)
 					else:
-						yamlpath = os.path.join(get_interface_path(path.split('/')[0]), '/'.join(path.split('/')[1:]))
+						yamlpath = os.path.join(get_package_share_directory(path.split('/')[0]), '/'.join(path.split('/')[1:]))
 					with open(yamlpath, 'r') as f:
 						content = getattr(yaml, 'unsafe_load', yaml.load)(f)
 					if ns != '' and ns in content:
@@ -207,7 +207,8 @@ def behavior_launcher_main(node_args=None):
             request.arg_keys.append('/'+k)
             request.arg_values.append(v)
         time.sleep(0.2)  # wait for publishers...
-        launcher._callback(request)
+        launch_behavior_thread = threading.Thread(target=launcher._callback, args=(request,))
+        launch_behavior_thread.start()
 
     # Wait for ctrl-c to stop the application
     rclpy.spin(launcher)
